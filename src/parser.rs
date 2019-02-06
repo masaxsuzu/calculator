@@ -56,6 +56,7 @@ impl<'a> Parser<'a> {
         let mut left = match self.current_token {
             Token::Integer(_) => self.parse_int_expression(),
             Token::Minus => self.parse_prefix_expression(),
+            Token::LeftParen => self.parse_grouped_expression(),
             _ => {
                 return None;
             }
@@ -111,6 +112,18 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_grouped_expression(&mut self) -> Option<Expr> {
+
+        self.advance_token();
+
+        let expression = self.parse_expression(Precedence::Lowest);
+
+        match self.expect_next_token(Token::RightParen) {
+            true => expression,
+            _ => None,
+        }
+    }
+
     fn parse_int_expression(&mut self) -> Option<Expr> {
         match self.current_token {
             Token::Integer(ref mut int) => Some(Expr::Literal(Literal::Int(int.clone()))),
@@ -121,6 +134,15 @@ impl<'a> Parser<'a> {
     fn advance_token(&mut self){
         self.current_token = self.next_token.clone();
         self.next_token = self.lexer.next_token();
+    }
+
+    fn expect_next_token(&mut self, token:Token) -> bool {
+        if self.next_token == token.clone() {
+            self.advance_token();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     fn current_precedence(&mut self) -> Precedence{
@@ -216,7 +238,19 @@ mod tests {
                         Box::new(Expr::Literal(Literal::Int(4000))))),
                 ],
             ),
-
+            (
+                r#"(3000 + 4000 ) / 10
+                "#,
+                vec![
+                    Statement::Expression(Expr::Infix(
+                        Infix::Divide,
+                        Box::new(Expr::Infix(
+                            Infix::Plus,
+                            Box::new(Expr::Literal(Literal::Int(3000))),
+                            Box::new(Expr::Literal(Literal::Int(4000))))),
+                        Box::new(Expr::Literal(Literal::Int(10))))),
+                ],
+            ),
         ];
 
         for (input, want) in tests {
