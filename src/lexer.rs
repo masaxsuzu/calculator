@@ -25,7 +25,7 @@ impl<'a> Lexer<'a> {
         self.skip_whitespaces();
 
         let token = match self.ch {
-            b'0'...b'9' => self.consume_number(),
+            b'0'...b'9' => return self.consume_number(),
 
             b'+' => Token::Plus,
             b'-' => Token::Minus,
@@ -90,6 +90,7 @@ mod tests {
         5 * 6
         7 / 8
         ()
+        9*10
 
         &
         "#;
@@ -108,6 +109,10 @@ mod tests {
             Token::Integer(8),
             Token::LeftParen,
             Token::RightParen,
+            Token::Integer(9),
+            Token::Asterisk,
+            Token::Integer(10),
+
             Token::Illegal,
             Token::Eof,
         ];
