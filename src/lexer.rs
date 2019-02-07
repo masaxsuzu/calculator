@@ -8,8 +8,6 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    //! `Lexer` provides lexing capabilities.
-
     pub fn new(input: &'a str) -> Self {
         let mut lexer = Lexer {
             input,
@@ -23,20 +21,6 @@ impl<'a> Lexer<'a> {
         return lexer;
     }
 
-    /// `next_token` returns a next token from head. This finally returns calculator::Token::Eof.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut lexer = calculator::lexer::Lexer::new("Hello next token");
-    /// loop {
-    ///     let t = lexer.next_token();
-    ///
-    ///     // Do something.
-    ///
-    ///     if t == calculator::token::Token::Eof { break; }
-    /// }
-    /// ```
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespaces();
 
