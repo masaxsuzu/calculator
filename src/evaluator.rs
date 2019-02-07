@@ -80,7 +80,7 @@ impl Evaluator {
             Infix::Minus => Object::Int(left - right),
             Infix::Multiply => Object::Int(left * right),
             Infix::Divide => match right {
-                0 => Self::error(format!("divide {} by 0", left)),
+                0 => Self::error(format!("error: divide {} by 0", left)),
                 _ => Object::Int(left / right),
             },
         }
@@ -134,7 +134,7 @@ mod tests {
             (r#"10/3\n"#, Some(Object::Int(3))),
             (
                 r#"10/0\n"#,
-                Some(Object::Error(String::from("divide 10 by 0"))),
+                Some(Object::Error(String::from("error: divide 10 by 0"))),
             ),
         ];
 
