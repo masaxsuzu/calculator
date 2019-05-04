@@ -112,7 +112,6 @@ mod tests {
             Token::Integer(9),
             Token::Asterisk,
             Token::Integer(10),
-
             Token::Illegal,
             Token::Eof,
         ];

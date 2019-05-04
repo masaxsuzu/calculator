@@ -2,7 +2,7 @@
 test:
 	cargo fmt
 	cargo check
-	cargo test
+	cargo test --release
 
-run:
+run: test
 	cargo run

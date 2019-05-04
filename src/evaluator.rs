@@ -5,8 +5,8 @@ use crate::object::*;
 pub struct Evaluator {}
 
 impl Evaluator {
-    fn error(msg: String) -> Object {
-        Object::Error(msg)
+    fn error(code: ErrorCode, msg: String) -> Object {
+        Object::Error(code, msg)
     }
 
     pub fn new() -> Self {
@@ -18,7 +18,7 @@ impl Evaluator {
 
         for stmt in program {
             match self.eval_statement(stmt) {
-                Some(Object::Error(msg)) => return Some(Object::Error(msg)),
+                Some(Object::Error(code, msg)) => return Some(Object::Error(code, msg)),
                 obj => result = obj,
             }
         }
@@ -60,17 +60,21 @@ impl Evaluator {
     fn eval_minus_prefix(&mut self, right: Object) -> Object {
         match right {
             Object::Int(value) => Object::Int(-value),
-            _ => Self::error(format!("unknown operator: -{}", right)),
+            _ => Self::error(ErrorCode::RuntimeError, format!("invalid operator '-'")),
         }
     }
 
     fn eval_infix_expression(&mut self, infix: Infix, left: Object, right: Object) -> Object {
         match (left.clone(), right.clone()) {
             (Object::Int(l), Object::Int(r)) => self.eval_infix_int_expr(infix, l, r),
-            (Object::Int(_), _) => {
-                Self::error(format!("type mismatch: {} {} {}", left, infix, right))
-            }
-            _ => Self::error(format!("unknown operator: {} {} {}", left, infix, right)),
+            (Object::Int(_), _) => Self::error(
+                ErrorCode::RuntimeError,
+                format!("type mismatch '{}'", infix),
+            ),
+            _ => Self::error(
+                ErrorCode::RuntimeError,
+                format!("unknown operator '{}'", infix),
+            ),
         }
     }
 
@@ -80,7 +84,7 @@ impl Evaluator {
             Infix::Minus => Object::Int(left - right),
             Infix::Multiply => Object::Int(left * right),
             Infix::Divide => match right {
-                0 => Self::error(format!("error: divide {} by 0", left)),
+                0 => Self::error(ErrorCode::RuntimeError, format!("divide {} by 0", left)),
                 _ => Object::Int(left / right),
             },
         }
@@ -97,6 +101,7 @@ impl Evaluator {
 mod tests {
     use crate::evaluator::*;
     use crate::lexer::Lexer;
+    use crate::object::ErrorCode;
     use crate::object::Object;
     use crate::parser::Parser;
 
@@ -134,7 +139,24 @@ mod tests {
             (r#"10/3\n"#, Some(Object::Int(3))),
             (
                 r#"10/0\n"#,
-                Some(Object::Error(String::from("error: divide 10 by 0"))),
+                Some(Object::Error(
+                    ErrorCode::RuntimeError,
+                    String::from("divide 10 by 0"),
+                )),
+            ),
+            (
+                r#"1 + 10/0\n"#,
+                Some(Object::Error(
+                    ErrorCode::RuntimeError,
+                    String::from("type mismatch \'+\'"),
+                )),
+            ),
+            (
+                r#"-(10/0)\n"#,
+                Some(Object::Error(
+                    ErrorCode::RuntimeError,
+                    String::from("invalid operator \'-\'"),
+                )),
             ),
         ];
 
