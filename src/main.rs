@@ -6,14 +6,18 @@ pub mod object;
 pub mod parser;
 pub mod token;
 
-fn read<T: std::str::FromStr>() -> T {
+fn try_read_from_stdin<T: std::str::FromStr>() -> Result<T, T::Err> {
     let mut s = String::new();
     std::io::stdin().read_line(&mut s).ok();
-    s.trim().parse().ok().unwrap()
+    s.parse()
 }
 
 fn main() {
-    let mut input = read::<String>();
+    let mut input = match try_read_from_stdin::<String>() {
+        Ok(x) => x,
+        _ => std::process::exit(1),
+    };
+
     input.push('\0');
 
     let lexer = lexer::Lexer::new(&input);
