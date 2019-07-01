@@ -1,4 +1,5 @@
 use crate::ast::*;
+use crate::error::ParseError;
 use crate::lexer::Lexer;
 use crate::token::Token;
 
@@ -22,39 +23,43 @@ impl<'a> Parser<'a> {
         return parser;
     }
 
-    pub fn parse(&mut self) -> Program {
+    pub fn parse(&mut self) -> Result<Program, ParseError> {
         let mut program: Program = vec![];
 
         while self.current_token != Token::Eof {
-            if let Some(statement) = self.parse_statement() {
-                program.push(statement);
+            match self.parse_statement() {
+                Ok(statement) => {
+                    program.push(statement);
+                }
+                Err(e) => return Err(e),
             }
             self.advance_token();
         }
 
-        return program;
+        return Ok(program);
     }
 
-    fn parse_statement(&mut self) -> Option<Statement> {
+    fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         match self.current_token {
+            Token::Illegal => Err(ParseError::FoundIllegalToken),
             _ => self.parse_expression_statement(),
         }
     }
 
-    fn parse_expression_statement(&mut self) -> Option<Statement> {
+    fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
         match self.parse_expression(Precedence::Lowest) {
-            Some(expr) => Some(Statement::Expression(expr)),
-            _ => None,
+            Ok(expr) => Ok(Statement::Expression(expr)),
+            Err(e) => Err(e),
         }
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> Option<Expr> {
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expr, ParseError> {
         let mut left = match self.current_token {
             Token::Integer(_) => self.parse_int_expression(),
             Token::Minus => self.parse_prefix_expression(),
             Token::LeftParen => self.parse_grouped_expression(),
             _ => {
-                return None;
+                return Err(ParseError::FoundUnexpectedToken);
             }
         };
 
@@ -70,29 +75,27 @@ impl<'a> Parser<'a> {
         return left;
     }
 
-    fn parse_prefix_expression(&mut self) -> Option<Expr> {
+    fn parse_prefix_expression(&mut self) -> Result<Expr, ParseError> {
         let prefix = match self.current_token {
             Token::Minus => Prefix::Minus,
-            _ => return None,
+            _ => unreachable!("parse_prefix_expression"),
         };
 
         self.advance_token();
 
         match self.parse_expression(Precedence::Prefix) {
-            Some(expression) => Some(Expr::Prefix(prefix, Box::new(expression))),
-            None => None,
+            Ok(expression) => Ok(Expr::Prefix(prefix, Box::new(expression))),
+            Err(e) => Err(e),
         }
     }
 
-    fn parse_infix_expression(&mut self, left: Expr) -> Option<Expr> {
+    fn parse_infix_expression(&mut self, left: Expr) -> Result<Expr, ParseError> {
         let infix = match self.current_token {
             Token::Plus => Infix::Plus,
             Token::Minus => Infix::Minus,
             Token::Asterisk => Infix::Multiply,
             Token::Slash => Infix::Divide,
-            _ => {
-                return None;
-            }
+            _ => unreachable!("parse_infix_expression"),
         };
 
         let precedence = self.current_precedence();
@@ -100,26 +103,26 @@ impl<'a> Parser<'a> {
         self.advance_token();
 
         match self.parse_expression(precedence) {
-            Some(expression) => Some(Expr::Infix(infix, Box::new(left), Box::new(expression))),
-            None => None,
+            Ok(expression) => Ok(Expr::Infix(infix, Box::new(left), Box::new(expression))),
+            Err(e) => Err(e),
         }
     }
 
-    fn parse_grouped_expression(&mut self) -> Option<Expr> {
+    fn parse_grouped_expression(&mut self) -> Result<Expr, ParseError> {
         self.advance_token();
 
         let expression = self.parse_expression(Precedence::Lowest);
 
         match self.expect_next_token(Token::RightParen) {
             true => expression,
-            _ => None,
+            _ => Err(ParseError::FoundUnterminatedParentheses),
         }
     }
 
-    fn parse_int_expression(&mut self) -> Option<Expr> {
+    fn parse_int_expression(&mut self) -> Result<Expr, ParseError> {
         match self.current_token {
-            Token::Integer(ref mut int) => Some(Expr::Literal(Literal::Int(int.clone()))),
-            _ => None,
+            Token::Integer(ref mut int) => Ok(Expr::Literal(Literal::Int(int.clone()))),
+            _ => unreachable!("parse_int_expression"),
         }
     }
 
@@ -157,9 +160,9 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use crate::ast::*;
+    use crate::error::ParseError;
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-
     #[test]
     fn test_literals() {
         let tests = vec![
@@ -229,14 +232,39 @@ mod tests {
 
         for (input, want) in tests {
             let mut parser = Parser::new(Lexer::new(input));
-            let program = parser.parse();
+            let program = parser.parse().unwrap();
             assert_program(want, program);
         }
     }
-
     fn assert_program(want: Vec<Statement>, got: Program) {
         ///assert_eq!(want.len(), got.len());
         assert_eq!(want, got)
     }
 
+    #[test]
+    fn test_found_illegal_token() {
+        let tests = vec![
+            (
+                r#"1x
+                "#,
+                ParseError::FoundIllegalToken,
+            ),
+            (
+                r#")
+                "#,
+                ParseError::FoundUnexpectedToken,
+            ),
+            (
+                r#"(1
+                "#,
+                ParseError::FoundUnterminatedParentheses,
+            ),
+        ];
+
+        for (input, want) in tests {
+            let mut parser = Parser::new(Lexer::new(input));
+            let error = parser.parse().unwrap_err();
+            assert_eq!(want, error);
+        }
+    }
 }

@@ -60,30 +60,31 @@ mod tests {
     use crate::parser::Parser;
 
     fn compile(input: &str) -> Option<String> {
-        RPNCompiler::new().compile(Parser::new(Lexer::new(input)).parse())
+        RPNCompiler::new().compile(Parser::new(Lexer::new(input)).parse().unwrap())
     }
-
     #[test]
     fn test_compile() {
         let tests = vec![
-            (r#"1+1\n"#, "1 1 +".to_string()),
-            (r#"1*2+3*4\n"#, "1 2 * 3 4 * +".to_string()),
-            (r#"1234 + 1 * 0\n"#, "1234 1 0 * +".to_string()),
-            (r#"-1234 / 5\n"#, "-1234 5 /".to_string()),
             (
-                r#"
-            -1234 / 5
-            1234 / 5
+                r#"1+1
+            "#,
+                "1 1 +".to_string(),
+            ),
+            (
+                r#"1*2+3*4
+            "#,
+                "1 2 * 3 4 * +".to_string(),
+            ),
+            (
+                r#"1234 + 1 * 0
+            "#,
+                "1234 1 0 * +".to_string(),
+            ),
+            (
+                r#"-1234 / 5
             "#,
                 "-1234 5 /".to_string(),
             ),
-            (
-                r#"
-            -1234 5 12341 / 6
-            "#,
-                "-1234".to_string(),
-            ),
-            (r#"zz\n"#, "".to_string()),
         ];
 
         for (input, expect) in tests {

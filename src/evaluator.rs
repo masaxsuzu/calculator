@@ -106,53 +106,82 @@ mod tests {
     use crate::parser::Parser;
 
     fn eval(input: &str) -> Option<Object> {
-        Evaluator::new().eval(Parser::new(Lexer::new(input)).parse())
+        Evaluator::new().eval(Parser::new(Lexer::new(input)).parse().unwrap())
     }
 
     #[test]
     fn test_literal() {
         let tests = vec![
-            (r#"5\n"#, Some(Object::Int(5))),
-            (r#"10\n"#, Some(Object::Int(10))),
+            (
+                r#"5
+            "#,
+                Some(Object::Int(5)),
+            ),
+            (
+                r#"10
+            "#,
+                Some(Object::Int(10)),
+            ),
         ];
 
         for (input, expect) in tests {
             assert_eq!(expect, eval(input));
         }
     }
-
     #[test]
     fn test_prefix() {
-        let tests = vec![(r#"-5\n"#, Some(Object::Int(-5)))];
+        let tests = vec![(
+            r#"-5
+        "#,
+            Some(Object::Int(-5)),
+        )];
 
         for (input, expect) in tests {
             assert_eq!(expect, eval(input));
         }
     }
-
     #[test]
     fn test_infix() {
         let tests = vec![
-            (r#"1+1\n"#, Some(Object::Int(2))),
-            (r#"2-3\n"#, Some(Object::Int(-1))),
-            (r#"24*3\n"#, Some(Object::Int(72))),
-            (r#"10/3\n"#, Some(Object::Int(3))),
             (
-                r#"10/0\n"#,
+                r#"1+1
+            "#,
+                Some(Object::Int(2)),
+            ),
+            (
+                r#"2-3
+            "#,
+                Some(Object::Int(-1)),
+            ),
+            (
+                r#"24*3
+            "#,
+                Some(Object::Int(72)),
+            ),
+            (
+                r#"10/3
+            "#,
+                Some(Object::Int(3)),
+            ),
+            (
+                r#"10/0
+                "#,
                 Some(Object::Error(
                     ErrorCode::RuntimeError,
                     String::from("divide 10 by 0"),
                 )),
             ),
             (
-                r#"1 + 10/0\n"#,
+                r#"1 + 10/0
+                "#,
                 Some(Object::Error(
                     ErrorCode::RuntimeError,
                     String::from("type mismatch \'+\'"),
                 )),
             ),
             (
-                r#"-(10/0)\n"#,
+                r#"-(10/0)
+                "#,
                 Some(Object::Error(
                     ErrorCode::RuntimeError,
                     String::from("invalid operator \'-\'"),
@@ -168,10 +197,26 @@ mod tests {
     #[test]
     fn test_group() {
         let tests = vec![
-            (r#"(1+1)\n"#, Some(Object::Int(2))),
-            (r#"(2-3)*3\n"#, Some(Object::Int(-3))),
-            (r#"(3*24)/3\n"#, Some(Object::Int(24))),
-            (r#"(10/3)-1\n"#, Some(Object::Int(2))),
+            (
+                r#"(1+1)
+            "#,
+                Some(Object::Int(2)),
+            ),
+            (
+                r#"(2-3)*3
+            "#,
+                Some(Object::Int(-3)),
+            ),
+            (
+                r#"(3*24)/3
+            "#,
+                Some(Object::Int(24)),
+            ),
+            (
+                r#"(10/3)-1
+            "#,
+                Some(Object::Int(2)),
+            ),
         ];
 
         for (input, expect) in tests {

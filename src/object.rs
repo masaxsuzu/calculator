@@ -3,7 +3,6 @@ use std::fmt;
 #[derive(PartialEq, Clone, Debug)]
 pub enum ErrorCode {
     RuntimeError,
-    ParseError,
 }
 #[derive(PartialEq, Clone, Debug)]
 pub enum Object {

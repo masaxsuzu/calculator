@@ -1,10 +1,4 @@
-pub mod ast;
-pub mod compiler;
-pub mod evaluator;
-pub mod lexer;
-pub mod object;
-pub mod parser;
-pub mod token;
+extern crate calculator;
 
 fn try_read_from_stdin<T: std::str::FromStr>() -> Result<T, T::Err> {
     let mut s = String::new();
@@ -20,16 +14,13 @@ fn main() {
 
     input.push('\0');
 
-    let lexer = lexer::Lexer::new(&input);
-    let mut parser = parser::Parser::new(lexer);
+    let lexer = calculator::lexer::Lexer::new(&input);
+    let mut parser = calculator::parser::Parser::new(lexer);
 
-    let program = parser.parse();
-    let compiler = compiler::RPNCompiler::new();
-
-    match compiler.compile(program) {
-        Some(o) => println!("{}", o),
-        _ => {
-            println!("parser error");
+    match parser.parse() {
+        Ok(o) => println!("{:?}", o),
+        Err(e) => {
+            println!("{:?}", e);
         }
     }
 }
