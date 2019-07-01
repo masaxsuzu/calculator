@@ -1,6 +1,6 @@
 extern crate calculator;
 
-enum ExitCode{
+enum ExitCode {
     Ok,
     InputError,
     ParseError,
@@ -26,23 +26,23 @@ fn main() {
 
     let program = match p.parse() {
         Ok(x) => x,
-        Err(e) =>{
-            println!("{:?}",e);
+        Err(e) => {
+            println!("{:?}", e);
             return exit(ExitCode::ParseError);
-        },
+        }
     };
 
-    match calculator::evaluator::Evaluator::new().eval(program){
-        Ok(x) => println!("{}",x),
+    match calculator::evaluator::Evaluator::new().eval(program) {
+        Ok(x) => println!("{}", x),
         Err(e) => {
-            println!("{:?}",e);
+            println!("{:?}", e);
             return exit(ExitCode::RuntimeError);
-        },
+        }
     };
     exit(ExitCode::Ok)
 }
 
-fn exit(code:ExitCode){
+fn exit(code: ExitCode) {
     match code {
         ExitCode::Ok => std::process::exit(0),
         ExitCode::InputError => std::process::exit(1),

@@ -30,11 +30,10 @@ impl<'a> Parser<'a> {
             match self.parse_statement() {
                 Ok(statement) => {
                     program.push(statement);
-                    break;
                 }
                 Err(e) => return Err(e),
             }
-            // self.advance_token();
+            self.advance_token();
         }
 
         return Ok(program);
