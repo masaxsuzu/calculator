@@ -62,7 +62,6 @@ mod tests {
     fn compile(input: &str) -> Option<String> {
         RPNCompiler::new().compile(Parser::new(Lexer::new(input)).parse().unwrap())
     }
-    #[test]
     fn test_compile() {
         let tests = vec![
             (

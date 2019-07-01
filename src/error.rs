@@ -18,3 +18,18 @@ impl fmt::Display for ParseError {
         }
     }
 }
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum RuntimeError {
+    DivideByZero,
+    FoundNoProgram,
+}
+
+impl fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            RuntimeError::DivideByZero => write!(f, "Divide a number by 0."),
+            RuntimeError::FoundNoProgram => {write!(f, "Found no program.")}
+        }
+    }
+}

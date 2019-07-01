@@ -1,52 +1,44 @@
 use crate::ast::*;
+use crate::error::RuntimeError;
 use crate::object::*;
 
 #[derive(Debug)]
 pub struct Evaluator {}
 
 impl Evaluator {
-    fn error(code: ErrorCode, msg: String) -> Object {
-        Object::Error(code, msg)
-    }
-
     pub fn new() -> Self {
         Evaluator {}
     }
 
-    pub fn eval(&mut self, program: Program) -> Option<Object> {
-        let mut result = None;
-
+    pub fn eval(&mut self, program: Program) -> Result<Object, RuntimeError> {
         for stmt in program {
-            match self.eval_statement(stmt) {
-                Some(Object::Error(code, msg)) => return Some(Object::Error(code, msg)),
-                obj => result = obj,
-            }
+            return self.eval_statement(stmt);
         }
-        result
+        Err(RuntimeError::FoundNoProgram)
     }
-
-    fn eval_statement(&mut self, statement: Statement) -> Option<Object> {
+    fn eval_statement(&mut self, statement: Statement) -> Result<Object, RuntimeError> {
         match statement {
             Statement::Expression(expression) => self.eval_expression(expression),
         }
     }
 
-    fn eval_expression(&mut self, expression: Expr) -> Option<Object> {
+    fn eval_expression(&mut self, expression: Expr) -> Result<Object, RuntimeError> {
         match expression {
-            Expr::Literal(literal) => Some(self.eval_literal(literal)),
+            Expr::Literal(literal) => Ok(self.eval_literal(literal)),
 
             Expr::Prefix(prefix, right_expression) => match self.eval_expression(*right_expression)
             {
-                Some(right) => Some(self.eval_prefix_expression(prefix, right)),
-                _ => None,
+                Ok(right) => Ok(self.eval_prefix_expression(prefix, right)),
+                Err(e) => Err(e),
             },
 
             Expr::Infix(infix, left_expression, right_expression) => match (
                 self.eval_expression(*left_expression),
                 self.eval_expression(*right_expression),
             ) {
-                (Some(left), Some(right)) => Some(self.eval_infix_expression(infix, left, right)),
-                _ => None,
+                (Ok(left), Ok(right)) => self.eval_infix_expression(infix, left, right),
+                (Err(e), _) => Err(e),
+                (_, Err(e)) => Err(e),
             },
         }
     }
@@ -60,32 +52,33 @@ impl Evaluator {
     fn eval_minus_prefix(&mut self, right: Object) -> Object {
         match right {
             Object::Int(value) => Object::Int(-value),
-            _ => Self::error(ErrorCode::RuntimeError, format!("invalid operator '-'")),
         }
     }
 
-    fn eval_infix_expression(&mut self, infix: Infix, left: Object, right: Object) -> Object {
+    fn eval_infix_expression(
+        &mut self,
+        infix: Infix,
+        left: Object,
+        right: Object,
+    ) -> Result<Object, RuntimeError> {
         match (left.clone(), right.clone()) {
             (Object::Int(l), Object::Int(r)) => self.eval_infix_int_expr(infix, l, r),
-            (Object::Int(_), _) => Self::error(
-                ErrorCode::RuntimeError,
-                format!("type mismatch '{}'", infix),
-            ),
-            _ => Self::error(
-                ErrorCode::RuntimeError,
-                format!("unknown operator '{}'", infix),
-            ),
         }
     }
 
-    fn eval_infix_int_expr(&mut self, infix: Infix, left: i64, right: i64) -> Object {
+    fn eval_infix_int_expr(
+        &mut self,
+        infix: Infix,
+        left: i64,
+        right: i64,
+    ) -> Result<Object, RuntimeError> {
         match infix {
-            Infix::Plus => Object::Int(left + right),
-            Infix::Minus => Object::Int(left - right),
-            Infix::Multiply => Object::Int(left * right),
+            Infix::Plus => Ok(Object::Int(left + right)),
+            Infix::Minus => Ok(Object::Int(left - right)),
+            Infix::Multiply => Ok(Object::Int(left * right)),
             Infix::Divide => match right {
-                0 => Self::error(ErrorCode::RuntimeError, format!("divide {} by 0", left)),
-                _ => Object::Int(left / right),
+                0 => Err(RuntimeError::DivideByZero),
+                _ => Ok(Object::Int(left / right)),
             },
         }
     }
@@ -99,13 +92,13 @@ impl Evaluator {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::RuntimeError;
     use crate::evaluator::*;
     use crate::lexer::Lexer;
-    use crate::object::ErrorCode;
     use crate::object::Object;
     use crate::parser::Parser;
 
-    fn eval(input: &str) -> Option<Object> {
+    fn eval(input: &str) -> Result<Object, RuntimeError> {
         Evaluator::new().eval(Parser::new(Lexer::new(input)).parse().unwrap())
     }
 
@@ -115,12 +108,12 @@ mod tests {
             (
                 r#"5
             "#,
-                Some(Object::Int(5)),
+                Ok(Object::Int(5)),
             ),
             (
                 r#"10
             "#,
-                Some(Object::Int(10)),
+                Ok(Object::Int(10)),
             ),
         ];
 
@@ -133,7 +126,7 @@ mod tests {
         let tests = vec![(
             r#"-5
         "#,
-            Some(Object::Int(-5)),
+            Ok(Object::Int(-5)),
         )];
 
         for (input, expect) in tests {
@@ -146,46 +139,42 @@ mod tests {
             (
                 r#"1+1
             "#,
-                Some(Object::Int(2)),
+                Ok(Object::Int(2)),
             ),
             (
                 r#"2-3
             "#,
-                Some(Object::Int(-1)),
+                Ok(Object::Int(-1)),
             ),
             (
                 r#"24*3
             "#,
-                Some(Object::Int(72)),
+                Ok(Object::Int(72)),
             ),
             (
                 r#"10/3
             "#,
-                Some(Object::Int(3)),
+                Ok(Object::Int(3)),
             ),
             (
                 r#"10/0
                 "#,
-                Some(Object::Error(
-                    ErrorCode::RuntimeError,
-                    String::from("divide 10 by 0"),
-                )),
+                Err(RuntimeError::DivideByZero),
             ),
             (
                 r#"1 + 10/0
                 "#,
-                Some(Object::Error(
-                    ErrorCode::RuntimeError,
-                    String::from("type mismatch \'+\'"),
-                )),
+                Err(RuntimeError::DivideByZero),
             ),
             (
                 r#"-(10/0)
                 "#,
-                Some(Object::Error(
-                    ErrorCode::RuntimeError,
-                    String::from("invalid operator \'-\'"),
-                )),
+                Err(RuntimeError::DivideByZero),
+            ),
+            (
+                r#"
+                "#,
+                Err(RuntimeError::FoundNoProgram),
             ),
         ];
 
@@ -200,22 +189,22 @@ mod tests {
             (
                 r#"(1+1)
             "#,
-                Some(Object::Int(2)),
+                Ok(Object::Int(2)),
             ),
             (
                 r#"(2-3)*3
             "#,
-                Some(Object::Int(-3)),
+                Ok(Object::Int(-3)),
             ),
             (
                 r#"(3*24)/3
             "#,
-                Some(Object::Int(24)),
+                Ok(Object::Int(24)),
             ),
             (
                 r#"(10/3)-1
             "#,
-                Some(Object::Int(2)),
+                Ok(Object::Int(2)),
             ),
         ];
 
