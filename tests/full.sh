@@ -10,9 +10,9 @@ function run_test () {
     ( echo "[Fail][${test_case_name}]" && exit 1) 
 }
 
-run_test "Simple" "1 1 +" "1+1"
-run_test "Priority" "1 2 + 2 *" "(1+2)*2"
-run_test "Divide-by-Zero" "1 0 /" "1/0"
-run_test "Include-Parse-Error" "" "122 +"
-run_test "Include-New-Line" "1 2 - 2 *" "(1-2)*2
+run_test "Simple" "2" "1+1"
+run_test "Priority" "6" "(1+2)*2"
+run_test "Divide-by-Zero" "DivideByZero" "1/0"
+run_test "Include-Parse-Error" "FoundUnexpectedToken" "122 +"
+run_test "Include-New-Line" "-2" "(1-2)*2
 "
