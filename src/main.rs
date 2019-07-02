@@ -32,21 +32,19 @@ fn main() {
         }
     };
 
-    match calculator::evaluator::Evaluator::new().eval(program) {
-        Ok(x) => println!("{}", x),
-        Err(e) => {
-            println!("{:?}", e);
-            return exit(ExitCode::RuntimeError);
-        }
-    };
-    exit(ExitCode::Ok)
+    for s in program {
+        let code = calculator::compiler::Compiler::new().compile(s);
+        println!("{}", code);
+
+        exit(ExitCode::Ok)
+    }
 }
 
 fn exit(code: ExitCode) {
     match code {
         ExitCode::Ok => std::process::exit(0),
-        ExitCode::InputError => std::process::exit(1),
-        ExitCode::ParseError => std::process::exit(2),
-        ExitCode::RuntimeError => std::process::exit(3),
+        ExitCode::InputError => std::process::exit(-1),
+        ExitCode::ParseError => std::process::exit(-2),
+        ExitCode::RuntimeError => std::process::exit(-3),
     }
 }

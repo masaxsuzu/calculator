@@ -1,6 +1,8 @@
 bin="target/release/calculator"
 
-.PHONY: test
+tmp= out.s out
+
+.PHONY: test clean
 test:
 	cargo fmt
 	cargo check
@@ -13,3 +15,7 @@ fulltest:$(bin)
 
 run: test
 	cargo run
+
+clean:
+	cargo clean
+	rm $(tmp)
