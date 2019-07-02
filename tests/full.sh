@@ -23,4 +23,6 @@ run_test "infix1" "26" "2*3+4*5"
 run_test "infix4" "4" "(3+5)/2"
 run_test "infix2" "15" "5*(9-6)"
 run_test "infix3" "47" "5+6*7"
+run_test "prefix1" "19" "-1+20"
+run_test "prefix2" "0" "-30*2-(-60)"
 

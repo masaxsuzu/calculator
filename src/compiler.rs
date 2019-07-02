@@ -37,14 +37,12 @@ impl Compiler {
                 self.compile_expression(y, byte_code);
                 self.compile_infix(i, byte_code);
             }
-            _ => unimplemented!("compile_expression"),
+            Expr::Prefix(p, x) => {
+                self.compile_expression(&Expr::Literal(Literal::Int(0)), byte_code);
+                self.compile_expression(x, byte_code);
+                self.compile_infix(&Infix::Minus, byte_code);
+            }
         };
-    }
-
-    fn compile_prefix(&self, p: &Prefix, x: &Expr, byte_code: &mut String) {
-        match *p {
-            _ => unimplemented!("compile_prefix"),
-        }
     }
 
     fn compile_infix(&self, i: &Infix, byte_code: &mut String) {
