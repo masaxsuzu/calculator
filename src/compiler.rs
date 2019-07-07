@@ -64,15 +64,91 @@ impl Compiler {
 
 #[cfg(test)]
 mod tests {
+    use crate::ast::{Expr, Infix, Literal, Statement};
     use crate::compiler::Compiler;
-    use crate::lexer::Lexer;
-    use crate::parser::Parser;
-
+    #[test]
     fn test_compile() {
-        let tests = vec![(
-            r#"1
-            "#,
-            "1".to_string(),
-        )];
+        let header = r#".intel_syntax noprefix
+.global main
+main:"#;
+
+        let tests = vec![
+            (
+                r#"
+  push 1
+  push 1
+  pop rdi
+  pop rax
+  add rax, rdi
+  push rax
+  pop rax
+  ret
+"#,
+                Statement::Expression(Expr::Infix(
+                    Infix::Plus,
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                )),
+            ),
+            (
+                r#"
+  push 1
+  push 1
+  pop rdi
+  pop rax
+  sub rax, rdi
+  push rax
+  pop rax
+  ret
+"#,
+                Statement::Expression(Expr::Infix(
+                    Infix::Minus,
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                )),
+            ),
+            (
+                r#"
+  push 1
+  push 1
+  pop rdi
+  pop rax
+  imul rax, rdi
+  push rax
+  pop rax
+  ret
+"#,
+                Statement::Expression(Expr::Infix(
+                    Infix::Multiply,
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                )),
+            ),
+            (
+                r#"
+  push 1
+  push 1
+  pop rdi
+  pop rax
+  cqo
+  idiv rdi
+  push rax
+  pop rax
+  ret
+"#,
+                Statement::Expression(Expr::Infix(
+                    Infix::Divide,
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                    Box::new(Expr::Literal(Literal::Int(1))),
+                )),
+            ),
+        ];
+
+        let c = Compiler::new();
+
+        for (input, want) in tests {
+            let got = c.compile(want);
+            assert_eq!(format!("{}{}", header, input).to_string(), got);
+        }
     }
 }

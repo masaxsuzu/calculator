@@ -13,6 +13,20 @@ function run_test () {
     ( echo "[Fail][${test_case_name}]" && exit 1) 
 }
 
+function run_test_from_file () {
+    test_case_name=$1
+    want=$2
+    input=$3
+    compiler="target/release/calculator"
+    "${compiler}" -f ${input} > ./out.s
+    gcc -o out out.s
+    ./out
+    got=$?
+    diff <(echo "${want}") <(echo "${got}") || \
+    ( echo "[Fail][${test_case_name}]" && exit 1) 
+}
+
+# stdin
 run_test "Simple1" "1" "1"
 run_test "Simple2" "10" "10"
 run_test "add" "11" "10+1"
@@ -26,3 +40,5 @@ run_test "infix3" "47" "5+6*7"
 run_test "prefix1" "19" "-1+20"
 run_test "prefix2" "0" "-30*2-(-60)"
 
+# file
+run_test_from_file "add" "2" "tests/files/add"
