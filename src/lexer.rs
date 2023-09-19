@@ -25,7 +25,7 @@ impl<'a> Lexer<'a> {
         self.skip_whitespaces();
 
         let token = match self.ch {
-            b'0'...b'9' => return self.consume_number(),
+            b'0'..=b'9' => return self.consume_number(),
 
             b'+' => Token::Plus,
             b'-' => Token::Minus,
@@ -47,7 +47,7 @@ impl<'a> Lexer<'a> {
     fn consume_number(&mut self) -> Token {
         let start_pos = self.pos;
 
-        while let b'0'...b'9' = self.ch {
+        while let b'0'..=b'9' = self.ch {
             self.read_char();
         }
 

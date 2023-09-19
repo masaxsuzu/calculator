@@ -237,7 +237,6 @@ mod tests {
         }
     }
     fn assert_program(want: Vec<Statement>, got: Program) {
-        ///assert_eq!(want.len(), got.len());
         assert_eq!(want, got)
     }
 

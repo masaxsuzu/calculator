@@ -37,7 +37,7 @@ impl Compiler {
                 self.compile_expression(y, byte_code);
                 self.compile_infix(i, byte_code);
             }
-            Expr::Prefix(p, x) => {
+            Expr::Prefix(_p, x) => {
                 self.compile_expression(&Expr::Literal(Literal::Int(0)), byte_code);
                 self.compile_expression(x, byte_code);
                 self.compile_infix(&Infix::Minus, byte_code);
