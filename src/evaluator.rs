@@ -212,5 +212,4 @@ mod tests {
             assert_eq!(expect, eval(input));
         }
     }
-
 }
